@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StoryWeaver - AI Children's Story Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90"></text></svg>') repeat;
+            animation: float 20s ease-in-out infinite;
+            opacity: 0.1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            position: relative;
+            z-index: 2;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .api-setup {
+            background: #fff3cd;
+            border: 2px dashed #ffc107;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #5a5a5a;
+            margin-bottom: 8px;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .theme-option {
+            padding: 12px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .theme-option:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .theme-option.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 1.3em;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 30px auto;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .generate-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #667eea;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #667eea;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .story-output {
+            background: linear-gradient(135deg, #a8edea, #fed6e3);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .story-output h3 {
+            color: #333;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .story-text {
+            font-size: 1.1em;
+            line-height: 1.8;
+            color: #444;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .example-section {
+            background: #e8f5e8;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .example-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #28a745;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        .quick-examples {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .quick-example {
+            background: #667eea;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+        }
+
+        .quick-example:hover {
+            background: #5a6fd8;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1> StoryWeaver </h1>
+            <p>Create magical children's stories with AI!</p>
+        </div>
+
+        <div class="main-content">
+            <!-- API Setup Section -->
+            <div class="api-setup">
+                <h3> Setup Your OpenAI API Key</h3>
+                <p>To create stories, you'll need an OpenAI API key. Get one from <a href="https://platform.openai.com/" target="_blank">platform.openai.com</a></p>
+                <input type="password" id="apiKey" placeholder="Paste your OpenAI API key here..." style="margin-top: 15px;">
+                <button onclick="saveApiKey()" style="margin-top: 10px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">Save Key</button>
+                <div id="apiStatus"></div>
+            </div>
+
+            <!-- Example Ideas Section -->
+            <div class="example-section">
+                <h3> Need Ideas? Try These Examples!</h3>
+                <div class="examples">
+                    <div class="example-card">
+                        <strong> Fantasy Adventures</strong>
+                        <div class="quick-examples">
+                            <span class="quick-example" onclick="fillExample('Luna the unicorn', 'enchanted rainbow bridge', 'believing in yourself')">Luna's Rainbow</span>
+                            <span class="quick-example" onclick="fillExample('Sir Benny the bear', 'crystal castle', 'courage')">Brave Bear</span>
+                        </div>
+                    </div>
+                    <div class="example-card">
+                        <strong> Ocean Tales</strong>
+                        <div class="quick-examples">
+                            <span class="quick-example" onclick="fillExample('Splash the dolphin', 'underwater coral city', 'friendship')">Ocean Friends</span>
+                            <span class="quick-example" onclick="fillExample('Captain Shelly', 'sunken pirate ship', 'sharing treasures')">Treasure Share</span>
+                        </div>
+                    </div>
+                    <div class="example-card">
+                        <strong> Space Adventures</strong>
+                        <div class="quick-examples">
+                            <span class="quick-example" onclick="fillExample('Zara the robot', 'floating space garden', 'helping others')">Space Garden</span>
+                            <span class="quick-example" onclick="fillExample('Comet the alien', 'colorful planet', 'making new friends')">Alien Friends</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Story Creation Form -->
+            <div class="form-section">
+                <h3> Create Your Story</h3>
+                
+                <div class="form-group">
+                    <label for="character"> Who is your main character?</label>
+                    <input type="text" id="character" placeholder="e.g., Bella the butterfly, Max the dragon, Pixel the robot">
+                </div>
+
+                <div class="form-group">
+                    <label for="setting"> Where does the story happen?</label>
+                    <input type="text" id="setting" placeholder="e.g., magical forest, underwater kingdom, candy land">
+                </div>
+
+                <div class="form-group">
+                    <label> What lesson should the story teach?</label>
+                    <div class="theme-grid">
+                        <div class="theme-option" onclick="selectTheme(this, 'friendship')"> Friendship</div>
+                        <div class="theme-option" onclick="selectTheme(this, 'courage')"> Courage</div>
+                        <div class="theme-option" onclick="selectTheme(this, 'kindness')"> Kindness</div>
+                        <div class="theme-option" onclick="selectTheme(this, 'honesty')"> Honesty</div>
+                        <div class="theme-option" onclick="selectTheme(this, 'sharing')"> Sharing</div>
+                        <div class="theme-option" onclick="selectTheme(this, 'creativity')"> Creativity</div>
+                        <div class="theme-option" onclick="selectTheme(this, 'perseverance')"> Never Give Up</div>
+                        <div class="theme-option" onclick="selectTheme(this, 'helping others')"> Helping Others</div>
+                    </div>
+                    <input type="text" id="customTheme" placeholder="Or type your own theme..." style="margin-top: 15px;">
+                </div>
+
+                <div class="form-group">
+                    <label for="storyLength"> How long should the story be?</label>
+                    <select id="storyLength">
+                        <option value="short">Short (100-150 words) - Perfect for bedtime!</option>
+                        <option value="medium">Medium (200-300 words) - Great for reading together</option>
+                        <option value="long">Long (400-500 words) - An adventure to remember</option>
+                    </select>
+                </div>
+
+                <button class="generate-btn" onclick="generateStory()" id="generateBtn">
+                     Create My Story! 
+                </button>
+            </div>
+
+            <!-- Story Output -->
+            <div id="storyOutput" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let selectedTheme = '';
+        let apiKey = '';
+
+        function saveApiKey() {
+            const key = document.getElementById('apiKey').value.trim();
+            if (key) {
+                apiKey = key;
+                document.getElementById('apiStatus').innerHTML = '<div class="success"> API Key saved! You can now generate stories.</div>';
+            } else {
+                document.getElementById('apiStatus').innerHTML = '<div class="error"> Please enter a valid API key.</div>';
+            }
+        }
+
+        function selectTheme(element, theme) {
+            // Remove selection from all theme options
+            document.querySelectorAll('.theme-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // Add selection to clicked option
+            element.classList.add('selected');
+            selectedTheme = theme;
+            
+            // Clear custom theme input
+            document.getElementById('customTheme').value = '';
+        }
+
+        function fillExample(character, setting, theme) {
+            document.getElementById('character').value = character;
+            document.getElementById('setting').value = setting;
+            
+            // Find and select the theme
+            const themeOptions = document.querySelectorAll('.theme-option');
+            themeOptions.forEach(option => {
+                option.classList.remove('selected');
+                if (option.textContent.toLowerCase().includes(theme.toLowerCase())) {
+                    option.classList.add('selected');
+                    selectedTheme = theme;
+                }
+            });
+            
+            // If theme not found in predefined options, put it in custom field
+            if (!selectedTheme) {
+                document.getElementById('customTheme').value = theme;
+            }
+        }
+
+        async function generateStory() {
+            // Check if API key is provided
+            if (!apiKey) {
+                alert('Please enter your OpenAI API key first!');
+                return;
+            }
+
+            // Get form values
+            const character = document.getElementById('character').value.trim() || 'a curious little rabbit';
+            const setting = document.getElementById('setting').value.trim() || 'a magical forest';
+            const customTheme = document.getElementById('customTheme').value.trim();
+            const theme = customTheme || selectedTheme || 'friendship';
+            const length = document.getElementById('storyLength').value;
+
+            // Show loading state
+            const generateBtn = document.getElementById('generateBtn');
+            const originalText = generateBtn.innerHTML;
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = ' Creating magic...';
+
+            // Show loading in output area
+            const outputDiv = document.getElementById('storyOutput');
+            outputDiv.style.display = 'block';
+            outputDiv.innerHTML = '<div class="loading"> Your story is being crafted by AI magic...</div>';
+
+            try {
+                const story = await callOpenAI(character, setting, theme, length);
+                displayStory(story, character, setting, theme);
+            } catch (error) {
+                console.error('Error:', error);
+                outputDiv.innerHTML = `
+                    <div class="error">
+                        <strong>Oops! Something went wrong:</strong><br>
+                        ${error.message}<br><br>
+                        <strong>Tips:</strong>
+                        <ul style="margin-top: 10px;">
+                            <li>Check that your API key is correct</li>
+                            <li>Make sure you have credits in your OpenAI account</li>
+                            <li>Try again in a moment</li>
+                        </ul>
+                    </div>
+                `;
+            } finally {
+                // Reset button
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = originalText;
+            }
+        }
+
+        async function callOpenAI(character, setting, theme, length) {
+            const lengthSpecs = {
+                'short': '100-150 words',
+                'medium': '200-300 words',
+                'long': '400-500 words'
+            };
+
+            const prompt = `Write a heartwarming children's story with these elements:
+
+Main Character: ${character}
+Setting: ${setting}
+Theme/Lesson: ${theme}
+Length: ${lengthSpecs[length]}
+
+Requirements:
+- Age-appropriate for children (5-10 years old)
+- Include dialogue to make it engaging
+- Have a clear beginning, middle, and end
+- End with a positive message about ${theme}
+- Use simple, vivid language that children can understand
+- Make it fun and imaginative!
+
+Story:`;
+
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: 'gpt-3.5-turbo',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: 'You are a creative children\'s book author who writes engaging, educational, and fun stories for kids.'
+                        },
+                        {
+                            role: 'user',
+                            content: prompt
+                        }
+                    ],
+                    max_tokens: 800,
+                    temperature: 0.8
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || 'Failed to generate story');
+            }
+
+            const data = await response.json();
+            return data.choices[0].message.content.trim();
+        }
+
+        function displayStory(story, character, setting, theme) {
+            const outputDiv = document.getElementById('storyOutput');
+            outputDiv.innerHTML = `
+                <div class="story-output">
+                    <h3> Your Story is Ready! </h3>
+                    <div style="text-align: center; margin-bottom: 20px; color: #666;">
+                        <strong>Featuring:</strong> ${character} • <strong>Setting:</strong> ${setting} • <strong>Theme:</strong> ${theme}
+                    </div>
+                    <div class="story-text">${story.replace(/\n/g, '<br><br>')}</div>
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button onclick="generateAnotherStory()" style="padding: 12px 24px; background: #28a745; color: white; border: none; border-radius: 25px; cursor: pointer; font-size: 1em;">
+                             Create Another Story
+                        </button>
+                        <button onclick="shareStory()" style="padding: 12px 24px; background: #17a2b8; color: white; border: none; border-radius: 25px; cursor: pointer; font-size: 1em; margin-left: 10px;">
+                             Copy Story
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateAnotherStory() {
+            // Clear the form
+            document.getElementById('character').value = '';
+            document.getElementById('setting').value = '';
+            document.getElementById('customTheme').value = '';
+            document.querySelectorAll('.theme-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            selectedTheme = '';
+            
+            // Hide story output
+            document.getElementById('storyOutput').style.display = 'none';
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function shareStory() {
+            const storyText = document.querySelector('.story-text').innerText;
+            navigator.clipboard.writeText(storyText).then(() => {
+                alert(' Story copied to clipboard! You can now paste it anywhere.');
+            }).catch(() => {
+                // Fallback for browsers that don't support clipboard API
+                const textArea = document.createElement('textarea');
+                textArea.value = storyText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert(' Story copied to clipboard!');
+            });
+        }
+
+        // Auto-focus on character input when page loads
+        window.addEventListener('load', () => {
+            document.getElementById('character').focus();
+        });
+    </script>
+</body>
+</html>
